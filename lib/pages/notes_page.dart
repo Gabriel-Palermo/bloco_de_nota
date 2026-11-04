@@ -21,19 +21,20 @@ class _NotesPageState extends State<NotesPage> {
 
   List<Note> notes = [];
   bool isLoading = true;
-
+  bool showArchived = false;
   String searchText = '';
 
   List<Note> get filteredNotes {
-    if (searchText.trim().isEmpty) {
-      return notes;
-    }
-
     final query = searchText.toLowerCase().trim();
 
     return notes.where((note) {
-      return note.title.toLowerCase().contains(query) ||
+      final correctStatus = note.isArchived == showArchived;
+
+      final matchesSearch =
+          note.title.toLowerCase().contains(query) ||
           note.content.toLowerCase().contains(query);
+
+      return correctStatus && matchesSearch;
     }).toList();
   }
 
@@ -99,6 +100,31 @@ class _NotesPageState extends State<NotesPage> {
     }
   }
 
+  Future<void> archiveNote(Note note) async {
+    try {
+      await noteService.setArchived(note, !note.isArchived);
+      await loadNotes();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              note.isArchived ? 'Nota desarquivada!' : 'Nota arquivada!',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('ERRO AO ARQUIVAR NOTA: $e');
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao arquivar nota: $e')));
+      }
+    }
+  }
+
   Future<void> logout() async {
     await authService.logout();
 
@@ -138,8 +164,10 @@ class _NotesPageState extends State<NotesPage> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-
     final displayedNotes = filteredNotes;
+
+    final activeCount = notes.where((note) => !note.isArchived).length;
+    final archivedCount = notes.where((note) => note.isArchived).length;
 
     return Scaffold(
       appBar: AppBar(
@@ -156,18 +184,20 @@ class _NotesPageState extends State<NotesPage> {
           const SizedBox(width: 8),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: openNewNote,
-        backgroundColor: const Color(0xff6c4ab6),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text(
-          'Nova Nota',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
+      floatingActionButton: showArchived
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: openNewNote,
+              backgroundColor: const Color(0xff6c4ab6),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text(
+                'Nova Nota',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 90),
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -204,55 +234,74 @@ class _NotesPageState extends State<NotesPage> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+
+            Row(
+              children: [
+                Expanded(
+                  child: ChoiceChip(
+                    label: Text('Ativas ($activeCount)'),
+                    selected: !showArchived,
+                    onSelected: (_) {
+                      setState(() {
+                        showArchived = false;
+                      });
+                    },
+                    selectedColor: const Color(0xffede5fa),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ChoiceChip(
+                    label: Text('Arquivadas ($archivedCount)'),
+                    selected: showArchived,
+                    onSelected: (_) {
+                      setState(() {
+                        showArchived = true;
+                      });
+                    },
+                    selectedColor: const Color(0xffede5fa),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
 
             if (isLoading)
               const Expanded(child: Center(child: CircularProgressIndicator()))
-            else if (notes.isEmpty)
+            else if (displayedNotes.isEmpty)
               Expanded(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: const BoxDecoration(
-                          color: Color(0xffede5fa),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.sticky_note_2_rounded,
-                          color: Color(0xff6c4ab6),
-                          size: 45,
-                        ),
-                      ),
-                      const SizedBox(height: 25),
-                      const Text('Nenhuma nota ainda'),
-                      const SizedBox(height: 8),
-                      const Text('Crie sua primeira nota.'),
-                    ],
-                  ),
-                ),
-              )
-            else if (displayedNotes.isEmpty)
-              const Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
                       Icon(
-                        Icons.search_off_rounded,
+                        searchText.isNotEmpty
+                            ? Icons.search_off_rounded
+                            : showArchived
+                            ? Icons.archive_outlined
+                            : Icons.sticky_note_2_rounded,
                         size: 55,
-                        color: Color(0xff6c4ab6),
+                        color: const Color(0xff6c4ab6),
                       ),
-                      SizedBox(height: 15),
+                      const SizedBox(height: 15),
                       Text(
-                        'Nenhuma nota encontrada',
-                        style: TextStyle(fontSize: 16),
+                        searchText.isNotEmpty
+                            ? 'Nenhuma nota encontrada'
+                            : showArchived
+                            ? 'Nenhuma nota arquivada'
+                            : 'Nenhuma nota ainda',
+                        style: const TextStyle(fontSize: 16),
                       ),
-                      SizedBox(height: 8),
-                      Text('Tente pesquisar outro termo.'),
+                      const SizedBox(height: 8),
+                      Text(
+                        searchText.isNotEmpty
+                            ? 'Tente pesquisar outro termo.'
+                            : showArchived
+                            ? 'Suas notas arquivadas aparecerão aqui.'
+                            : 'Crie sua primeira nota.',
+                      ),
                     ],
                   ),
                 ),
@@ -268,6 +317,7 @@ class _NotesPageState extends State<NotesPage> {
                       note: note,
                       onTap: () => openEditNote(note),
                       onDelete: () => deleteNote(note),
+                      onArchive: () => archiveNote(note),
                     );
                   },
                 ),

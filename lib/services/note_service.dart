@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../database/database_helper.dart';
 import '../models/note.dart';
+import 'dart:async';
 
 class NoteService {
   final DatabaseHelper database = DatabaseHelper.instance;
@@ -10,18 +11,12 @@ class NoteService {
   CollectionReference<Map<String, dynamic>> get notesCollection =>
       firestore.collection('notes');
 
-  // Salvar nota no SQLite e Firestore
+  // Salvar primeiro no SQLite
   Future<void> saveNote(Note note) async {
-    if (note.cloudId != null) {
-      await notesCollection.doc(note.cloudId).update(note.toFirestore());
+    int localId;
 
-      if (note.id != null) {
-        await database.updateNote(note);
-      }
-    } else {
-      final document = await notesCollection.add(note.toFirestore());
-
-      await database.insertNote(
+    if (note.id == null) {
+      localId = await database.insertNote(
         Note(
           uid: note.uid,
           title: note.title,
@@ -29,26 +24,81 @@ class NoteService {
           date: note.date,
           category: note.category,
           isArchived: note.isArchived,
-          cloudId: document.id,
+          cloudId: note.cloudId,
+          pendingSync: true,
+        ),
+      );
+    } else {
+      localId = note.id!;
+
+      await database.updateNote(
+        Note(
+          id: localId,
+          cloudId: note.cloudId,
+          uid: note.uid,
+          title: note.title,
+          content: note.content,
+          date: note.date,
+          category: note.category,
+          isArchived: note.isArchived,
+          pendingSync: true,
         ),
       );
     }
+
+    final savedNote = (await database.getNotes(
+      note.uid,
+    )).firstWhere((item) => item.id == localId);
+
+    // Sincroniza em segundo plano, sem bloquear a tela.
+    unawaited(_syncOneNote(savedNote).catchError((_) {}));
+  }
+
+  Future<void> _syncOneNote(Note note) async {
+    if (note.id == null) return;
+
+    String? cloudId = note.cloudId;
+
+    if (cloudId == null) {
+      final document = notesCollection.doc();
+
+      cloudId = document.id;
+
+      // Guarda o ID antes de tentar enviar ao Firebase.
+      await database.updateCloudId(note.id!, cloudId);
+    }
+
+    await notesCollection.doc(cloudId).set(note.toFirestore());
+
+    await database.markNoteSynced(note.id!, cloudId);
   }
 
   // Sincronizar notas locais e notas da nuvem
   Future<void> syncNotes(String uid) async {
-    final localNotes = await database.getNotes(uid);
+    // Primeiro processa exclusões pendentes.
+    final deletions = await database.getPendingDeletions(uid);
 
-    for (final note in localNotes) {
-      if (note.cloudId == null) {
-        final document = await notesCollection.add(note.toFirestore());
-
-        if (note.id != null) {
-          await database.updateCloudId(note.id!, document.id);
+    for (final deletion in deletions) {
+      try {
+        await notesCollection.doc(deletion['cloudId'] as String).delete();
+        await database.removePendingDeletion(deletion['id'] as int);
+      } on FirebaseException catch (e) {
+        if (e.code == 'not-found') {
+          await database.removePendingDeletion(deletion['id'] as int);
+        } else {
+          rethrow;
         }
       }
     }
 
+    // Envia alterações locais pendentes.
+    final pendingNotes = await database.getPendingNotes(uid);
+
+    for (final note in pendingNotes) {
+      await _syncOneNote(note);
+    }
+
+    // Recupera notas da nuvem.
     final snapshot = await notesCollection.where('uid', isEqualTo: uid).get();
 
     for (final document in snapshot.docs) {
@@ -63,38 +113,57 @@ class NoteService {
     return database.getNotes(uid);
   }
 
-  // Arquivar ou desarquivar nota
+  // Arquivar ou desarquivar
   Future<void> setArchived(Note note, bool archived) async {
-    final updatedNote = Note(
-      id: note.id,
-      cloudId: note.cloudId,
-      uid: note.uid,
-      title: note.title,
-      content: note.content,
-      date: note.date,
-      category: note.category,
-      isArchived: archived,
+    await database.updateNote(
+      Note(
+        id: note.id,
+        cloudId: note.cloudId,
+        uid: note.uid,
+        title: note.title,
+        content: note.content,
+        date: note.date,
+        category: note.category,
+        isArchived: archived,
+        pendingSync: true,
+      ),
     );
 
-    if (updatedNote.cloudId != null) {
-      await notesCollection
-          .doc(updatedNote.cloudId)
-          .update(updatedNote.toFirestore());
-    }
+    try {
+      final updatedNote = (await database.getNotes(
+        note.uid,
+      )).firstWhere((item) => item.id == note.id);
 
-    if (updatedNote.id != null) {
-      await database.updateNote(updatedNote);
+      await _syncOneNote(updatedNote);
+    } catch (e) {
+      // Mantém a alteração pendente para sincronizar depois.
     }
   }
 
-  // Excluir nota do SQLite e Firestore
+  // Excluir nota
   Future<void> deleteNote(Note note) async {
     if (note.cloudId != null) {
-      await notesCollection.doc(note.cloudId).delete();
+      await database.addPendingDeletion(note.uid, note.cloudId!);
     }
 
     if (note.id != null) {
       await database.deleteNote(note.id!);
+    }
+
+    // Tenta excluir da nuvem; se falhar, fica na fila.
+    try {
+      if (note.cloudId != null) {
+        await notesCollection.doc(note.cloudId).delete();
+        final deletions = await database.getPendingDeletions(note.uid);
+
+        for (final deletion in deletions) {
+          if (deletion['cloudId'] == note.cloudId) {
+            await database.removePendingDeletion(deletion['id'] as int);
+          }
+        }
+      }
+    } catch (e) {
+      // Exclusão pendente será processada na próxima sincronização.
     }
   }
 }

@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
-
 import '../models/note.dart';
 
 class NoteCard extends StatelessWidget {
   final Note note;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final VoidCallback onArchive;
 
   const NoteCard({
     super.key,
     required this.note,
     required this.onTap,
     required this.onDelete,
+    required this.onArchive,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
-
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
@@ -30,65 +30,51 @@ class NoteCard extends StatelessWidget {
           ),
         ],
       ),
-
       child: InkWell(
         borderRadius: BorderRadius.circular(22),
         onTap: onTap,
-
         child: Padding(
           padding: const EdgeInsets.all(20),
-
           child: Row(
             children: [
               Container(
                 width: 48,
                 height: 48,
-
                 decoration: BoxDecoration(
                   color: const Color(0xFFEDE5FA),
                   borderRadius: BorderRadius.circular(15),
                 ),
-
                 child: const Icon(
                   Icons.notes_rounded,
                   color: Color(0xFF6C4AB6),
                 ),
               ),
-
               const SizedBox(width: 15),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-
                   children: [
                     Text(
                       note.title.isEmpty ? 'Sem título' : note.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF292333),
                       ),
                     ),
-
                     const SizedBox(height: 6),
-
                     Text(
                       note.content,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-
                       style: const TextStyle(
                         color: Color(0xFF77717F),
                         height: 1.4,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     Text(
                       note.date,
                       style: const TextStyle(
@@ -99,8 +85,18 @@ class NoteCard extends StatelessWidget {
                   ],
                 ),
               ),
-
               IconButton(
+                tooltip: note.isArchived ? 'Desarquivar' : 'Arquivar',
+                onPressed: onArchive,
+                icon: Icon(
+                  note.isArchived
+                      ? Icons.unarchive_outlined
+                      : Icons.archive_outlined,
+                  color: const Color(0xFF6C4AB6),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Excluir',
                 onPressed: onDelete,
                 icon: const Icon(
                   Icons.delete_outline_rounded,

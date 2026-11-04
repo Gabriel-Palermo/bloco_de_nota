@@ -1,13 +1,13 @@
 class Note {
   final int? id;
   final String? cloudId;
-
   final String uid;
   final String title;
   final String content;
   final String date;
   final String category;
   final bool isArchived;
+  final bool pendingSync;
 
   Note({
     this.id,
@@ -18,9 +18,9 @@ class Note {
     required this.date,
     this.category = 'Pessoal',
     this.isArchived = false,
+    this.pendingSync = true,
   });
 
-  // Dados utilizados pelo SQLite
   Map<String, dynamic> toMap() => {
     'id': id,
     'cloudId': cloudId,
@@ -30,19 +30,17 @@ class Note {
     'date': date,
     'category': category,
     'isArchived': isArchived ? 1 : 0,
+    'pendingSync': pendingSync ? 1 : 0,
   };
 
-  // Dados utilizados pelo Firestore
-  Map<String, dynamic> toFirestore() {
-    return {
-      'uid': uid,
-      'title': title,
-      'content': content,
-      'date': date,
-      'category': category,
-      'isArchived': isArchived,
-    };
-  }
+  Map<String, dynamic> toFirestore() => {
+    'uid': uid,
+    'title': title,
+    'content': content,
+    'date': date,
+    'category': category,
+    'isArchived': isArchived,
+  };
 
   factory Note.fromMap(Map<String, dynamic> map) {
     return Note(
@@ -54,6 +52,7 @@ class Note {
       date: map['date'] as String,
       category: map['category'] as String? ?? 'Pessoal',
       isArchived: (map['isArchived'] as int? ?? 0) == 1,
+      pendingSync: (map['pendingSync'] as int? ?? 0) == 1,
     );
   }
 
@@ -66,6 +65,7 @@ class Note {
       date: map['date'] as String,
       category: map['category'] as String? ?? 'Pessoal',
       isArchived: map['isArchived'] as bool? ?? false,
+      pendingSync: false,
     );
   }
 }
