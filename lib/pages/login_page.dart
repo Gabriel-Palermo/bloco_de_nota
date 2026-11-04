@@ -1,6 +1,6 @@
-import 'package:bloco_de_nota_turma_a/pages/notes_page.dart';
-import 'package:bloco_de_nota_turma_a/pages/register_page.dart';
-import 'package:bloco_de_nota_turma_a/services/auth_service.dart';
+import 'package:bloco_de_nota/pages/notes_page.dart';
+import 'package:bloco_de_nota/pages/register_page.dart';
+import 'package:bloco_de_nota/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -185,7 +185,7 @@ class _LoginPageState extends State<LoginPage> {
                         MaterialPageRoute(builder: (_) => RegisterPage()),
                       );
                     },
-                    child: Text("Ainda não possui uma conta? Cadastre-se", ),
+                    child: Text("Ainda não possui uma conta? Cadastre-se"),
                   ),
                 ),
               ],

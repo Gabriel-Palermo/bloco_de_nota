@@ -1,6 +1,6 @@
 {
-    "name": "bloco_de_nota_turma_a",
-    "short_name": "bloco_de_nota_turma_a",
+    "name": "bloco_de_nota",
+    "short_name": "bloco_de_nota",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

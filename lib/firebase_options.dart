@@ -25,15 +25,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -47,27 +41,51 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCk0m7dk83-AKuadqkdyVJ1yK3-apqVd-o',
-    appId: '1:917005993637:web:17da01cb3f1d22abd0af4c',
-    messagingSenderId: '917005993637',
-    projectId: 'blocodenotasturmaa',
-    authDomain: 'blocodenotasturmaa.firebaseapp.com',
-    storageBucket: 'blocodenotasturmaa.firebasestorage.app',
+    apiKey: 'AIzaSyDD5WMuszOowD7-_AMjs8W8jYpbhVsoyUA',
+    appId: '1:880760892372:web:2259caee123628ecccc441',
+    messagingSenderId: '880760892372',
+    projectId: 'blobo-de-notas',
+    authDomain: 'blobo-de-notas.firebaseapp.com',
+    databaseURL: 'https://blobo-de-notas-default-rtdb.firebaseio.com',
+    storageBucket: 'blobo-de-notas.firebasestorage.app',
+    measurementId: 'G-ZCCNM796L4',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyB9LiQ3tI8ioFn2SCtyLWo10RZcxgRFvxg',
-    appId: '1:917005993637:android:93d6c01000c35761d0af4c',
-    messagingSenderId: '917005993637',
-    projectId: 'blocodenotasturmaa',
-    storageBucket: 'blocodenotasturmaa.firebasestorage.app',
+    apiKey: 'AIzaSyDIq48PgdG8hDabve7tLZYW_uEN1eTlLuY',
+    appId: '1:880760892372:android:a3dd8af0972039a0ccc441',
+    messagingSenderId: '880760892372',
+    projectId: 'blobo-de-notas',
+    databaseURL: 'https://blobo-de-notas-default-rtdb.firebaseio.com',
+    storageBucket: 'blobo-de-notas.firebasestorage.app',
   );
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBUedL-Dhe4iqkDrF6WLOSWEj7QtdO9WR8',
-    appId: '1:917005993637:ios:fdac2f5cae22016bd0af4c',
-    messagingSenderId: '917005993637',
-    projectId: 'blocodenotasturmaa',
-    storageBucket: 'blocodenotasturmaa.firebasestorage.app',
-    iosBundleId: 'com.example.blocoDeNotaTurmaa',
+    apiKey: 'AIzaSyBKjX0tFbLvFr9NJVZheVl5VicHVQTsV_0',
+    appId: '1:880760892372:ios:2436adbb2cbece42ccc441',
+    messagingSenderId: '880760892372',
+    projectId: 'blobo-de-notas',
+    databaseURL: 'https://blobo-de-notas-default-rtdb.firebaseio.com',
+    storageBucket: 'blobo-de-notas.firebasestorage.app',
+    iosBundleId: 'com.example.blocoDeNota',
+  );
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyBKjX0tFbLvFr9NJVZheVl5VicHVQTsV_0',
+    appId: '1:880760892372:ios:2436adbb2cbece42ccc441',
+    messagingSenderId: '880760892372',
+    projectId: 'blobo-de-notas',
+    databaseURL: 'https://blobo-de-notas-default-rtdb.firebaseio.com',
+    storageBucket: 'blobo-de-notas.firebasestorage.app',
+    iosBundleId: 'com.example.blocoDeNota',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyDD5WMuszOowD7-_AMjs8W8jYpbhVsoyUA',
+    appId: '1:880760892372:web:43b9f1e9c41ecd0accc441',
+    messagingSenderId: '880760892372',
+    projectId: 'blobo-de-notas',
+    authDomain: 'blobo-de-notas.firebaseapp.com',
+    databaseURL: 'https://blobo-de-notas-default-rtdb.firebaseio.com',
+    storageBucket: 'blobo-de-notas.firebasestorage.app',
+    measurementId: 'G-B6P6N80G0F',
   );
 }
